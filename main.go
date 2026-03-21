@@ -1,25 +1,13 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/binary"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/docker/docker/pkg/namesgenerator"
 )
-
-var adjectives = []string{
-	"swift", "quiet", "brave", "calm", "clever", "curious", "eager", "gentle",
-	"happy", "lucky", "mighty", "nimble", "proud", "sharp", "silent", "sturdy",
-	"wild", "wise", "bold", "bright", "cosmic", "dapper", "frosty", "golden",
-}
-
-var nouns = []string{
-	"badger", "beacon", "canyon", "cedar", "comet", "coral", "crane", "delta",
-	"falcon", "fjord", "harbor", "heron", "island", "juniper", "lagoon", "meadow",
-	"orca", "penguin", "quartz", "raven", "river", "sapphire", "summit", "willow",
-}
 
 func main() {
 	if len(os.Args) != 3 || os.Args[1] != "flow" || os.Args[2] != "branch" {
@@ -33,7 +21,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	branch := fmt.Sprintf("%s/%s-%s", user, adjectives[randInt(len(adjectives))], nouns[randInt(len(nouns))])
+	branch := fmt.Sprintf("%s/%s", user, namesgenerator.GetRandomName(0))
 
 	cmd := exec.Command("git", "checkout", "-b", branch)
 	cmd.Stdout = os.Stdout
@@ -43,14 +31,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "glit: git checkout -b: %v\n", err)
 		os.Exit(1)
 	}
-}
-
-func randInt(n int) int {
-	var b [8]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		panic(err)
-	}
-	return int(binary.BigEndian.Uint64(b[:]) % uint64(n))
 }
 
 func githubUsername() (string, error) {
