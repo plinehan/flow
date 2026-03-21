@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,7 +31,12 @@ func main() {
 		}
 		branch = fmt.Sprintf("%s/%s", user, name)
 	} else {
-		branch = fmt.Sprintf("%s/%s", user, namesgenerator.GetRandomName(0))
+		slug, err := randomBranchSlug()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+			os.Exit(1)
+		}
+		branch = fmt.Sprintf("%s/%s", user, slug)
 	}
 
 	cmd := exec.Command("git", "checkout", "-b", branch)
@@ -41,6 +47,21 @@ func main() {
 		fmt.Fprintf(os.Stderr, "glit: git checkout -b: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+const alnum = "abcdefghijklmnopqrstuvwxyz0123456789"
+
+func randomBranchSlug() (string, error) {
+	base := strings.ReplaceAll(namesgenerator.GetRandomName(0), "_", "-")
+	b := make([]byte, 12)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	suffix := make([]byte, len(b))
+	for i := range b {
+		suffix[i] = alnum[int(b[i])%len(alnum)]
+	}
+	return base + "-" + string(suffix), nil
 }
 
 func githubUsername() (string, error) {
