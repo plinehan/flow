@@ -10,8 +10,8 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 || os.Args[1] != "flow" || os.Args[2] != "branch" {
-		fmt.Fprintf(os.Stderr, "usage: glit flow branch\n")
+	if len(os.Args) < 2 || os.Args[1] != "branch" || len(os.Args) > 3 {
+		fmt.Fprintf(os.Stderr, "usage: glit branch [name]\n")
 		os.Exit(2)
 	}
 
@@ -21,7 +21,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	branch := fmt.Sprintf("%s/%s", user, namesgenerator.GetRandomName(0))
+	var branch string
+	if len(os.Args) == 3 {
+		name := strings.TrimSpace(os.Args[2])
+		if name == "" {
+			fmt.Fprintf(os.Stderr, "glit: branch name must not be empty\n")
+			os.Exit(2)
+		}
+		branch = fmt.Sprintf("%s/%s", user, name)
+	} else {
+		branch = fmt.Sprintf("%s/%s", user, namesgenerator.GetRandomName(0))
+	}
 
 	cmd := exec.Command("git", "checkout", "-b", branch)
 	cmd.Stdout = os.Stdout
