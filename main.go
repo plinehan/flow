@@ -14,7 +14,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge\n")
 		os.Exit(2)
 	}
 
@@ -25,9 +25,11 @@ func main() {
 		cmdCreate(os.Args[2:])
 	case "view":
 		cmdView(os.Args[2:])
+	case "merge":
+		cmdMerge(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "glit: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge\n")
 		os.Exit(2)
 	}
 }
@@ -154,6 +156,33 @@ func cmdView(args []string) {
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "glit: gh pr view: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func cmdMerge(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: glit merge\n")
+		os.Exit(2)
+	}
+
+	branch, err := currentBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := assertNotDefaultBranch(branch); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("gh", "pr", "merge", branch, "--squash")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: gh pr merge: %v\n", err)
 		os.Exit(1)
 	}
 }
