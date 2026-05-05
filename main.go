@@ -14,7 +14,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view\n")
 		os.Exit(2)
 	}
 
@@ -23,9 +23,11 @@ func main() {
 		cmdBranch(os.Args[2:])
 	case "create":
 		cmdCreate(os.Args[2:])
+	case "view":
+		cmdView(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "glit: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view\n")
 		os.Exit(2)
 	}
 }
@@ -118,6 +120,33 @@ func cmdCreate(args []string) {
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "glit: gh pr create: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func cmdView(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: glit view\n")
+		os.Exit(2)
+	}
+
+	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: could not determine current branch: %v\n", err)
+		os.Exit(1)
+	}
+	branch := strings.TrimSpace(string(out))
+
+	if branch == "main" || branch == "master" {
+		fmt.Fprintf(os.Stderr, "glit: no PR for %q\n", branch)
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("gh", "pr", "view", "--web", "--head", branch)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: gh pr view: %v\n", err)
 		os.Exit(1)
 	}
 }
