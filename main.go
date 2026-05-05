@@ -85,16 +85,16 @@ func cmdCreate(args []string) {
 			os.Exit(2)
 		}
 	} else {
-		out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+		var err error
+		branch, err = currentBranch()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "glit: could not determine current branch: %v\n", err)
+			fmt.Fprintf(os.Stderr, "glit: %v\n", err)
 			os.Exit(1)
 		}
-		branch = strings.TrimSpace(string(out))
 	}
 
-	if branch == "main" || branch == "master" {
-		fmt.Fprintf(os.Stderr, "glit: cannot create a PR for %q\n", branch)
+	if err := assertNotDefaultBranch(branch); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -130,15 +130,14 @@ func cmdView(args []string) {
 		os.Exit(2)
 	}
 
-	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	branch, err := currentBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: could not determine current branch: %v\n", err)
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
 		os.Exit(1)
 	}
-	branch := strings.TrimSpace(string(out))
 
-	if branch == "main" || branch == "master" {
-		fmt.Fprintf(os.Stderr, "glit: no PR for %q\n", branch)
+	if err := assertNotDefaultBranch(branch); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -149,6 +148,38 @@ func cmdView(args []string) {
 		fmt.Fprintf(os.Stderr, "glit: gh pr view: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func currentBranch() (string, error) {
+	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
+	if err != nil {
+		return "", fmt.Errorf("could not determine current branch: %v", err)
+	}
+	return strings.TrimSpace(string(out)), nil
+}
+
+// assertNotDefaultBranch returns an error if branch is the repo's default branch.
+func assertNotDefaultBranch(branch string) error {
+	def, err := defaultBranch()
+	if err != nil {
+		return err
+	}
+	if branch == def {
+		return fmt.Errorf("%q is the default branch", branch)
+	}
+	return nil
+}
+
+// defaultBranch returns the repository's default branch name as reported by GitHub.
+func defaultBranch() (string, error) {
+	out, err := exec.Command("gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name").Output()
+	if err != nil {
+		return "", fmt.Errorf("gh repo view: %v", err)
+	}
+	if name := strings.TrimSpace(string(out)); name != "" {
+		return name, nil
+	}
+	return "", fmt.Errorf("gh returned empty defaultBranchRef")
 }
 
 // commitTitleBody returns the first line and remainder of the tip commit message on branch.
