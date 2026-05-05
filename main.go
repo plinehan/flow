@@ -11,6 +11,22 @@ import (
 	"github.com/docker/docker/pkg/namesgenerator"
 )
 
+const grey = "\x1b[90m"
+const reset = "\x1b[0m"
+
+// run executes a command with its stdio connected to the terminal, logging it in grey first.
+func run(name string, args ...string) {
+	fmt.Printf("%s> %s %s%s\n", grey, name, strings.Join(args, " "), reset)
+	cmd := exec.Command(name, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %s %s: %v\n", name, strings.Join(args, " "), err)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
@@ -67,14 +83,7 @@ func cmdBranch(args []string) {
 		branch = fmt.Sprintf("%s/%s", user, slug)
 	}
 
-	cmd := exec.Command("git", "checkout", "-b", branch)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: git checkout -b: %v\n", err)
-		os.Exit(1)
-	}
+	run("git", "checkout", "-b", branch)
 }
 
 func cmdCreate(args []string) {
@@ -114,13 +123,7 @@ func cmdCreate(args []string) {
 		os.Exit(1)
 	}
 
-	push := exec.Command("git", "push", "-u", "origin", branch)
-	push.Stdout = os.Stdout
-	push.Stderr = os.Stderr
-	if err := push.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: git push: %v\n", err)
-		os.Exit(1)
-	}
+	run("git", "push", "-u", "origin", branch)
 
 	title, body, err := commitTitleBody(branch)
 	if err != nil {
@@ -128,14 +131,7 @@ func cmdCreate(args []string) {
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("gh", "pr", "create", "--head", branch, "--title", title, "--body", body)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: gh pr create: %v\n", err)
-		os.Exit(1)
-	}
+	run("gh", "pr", "create", "--head", branch, "--title", title, "--body", body)
 }
 
 func cmdView(args []string) {
@@ -155,13 +151,7 @@ func cmdView(args []string) {
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("gh", "pr", "view", "--web", branch)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: gh pr view: %v\n", err)
-		os.Exit(1)
-	}
+	run("gh", "pr", "view", "--web", branch)
 }
 
 func cmdMerge(args []string) {
@@ -187,29 +177,11 @@ func cmdMerge(args []string) {
 		os.Exit(1)
 	}
 
-	merge := exec.Command("gh", "pr", "merge", branch, "--squash")
-	merge.Stdout = os.Stdout
-	merge.Stderr = os.Stderr
-	merge.Stdin = os.Stdin
-	if err := merge.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: gh pr merge: %v\n", err)
-		os.Exit(1)
-	}
-
-	runGit := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "glit: git %s: %v\n", strings.Join(args, " "), err)
-			os.Exit(1)
-		}
-	}
-
-	runGit("checkout", def)
-	runGit("push", "origin", "--delete", branch)
-	runGit("branch", "-D", branch)
-	runGit("pull", "--rebase")
+	run("gh", "pr", "merge", branch, "--squash")
+	run("git", "checkout", def)
+	run("git", "push", "origin", "--delete", branch)
+	run("git", "branch", "-D", branch)
+	run("git", "pull", "--rebase")
 }
 
 func cmdRebase(args []string) {
@@ -224,19 +196,8 @@ func cmdRebase(args []string) {
 		os.Exit(1)
 	}
 
-	runGit := func(args ...string) {
-		cmd := exec.Command("git", args...)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "glit: git %s: %v\n", strings.Join(args, " "), err)
-			os.Exit(1)
-		}
-	}
-
-	runGit("fetch", "origin", def)
-	runGit("rebase", "origin/"+def)
+	run("git", "fetch", "origin", def)
+	run("git", "rebase", "origin/"+def)
 }
 
 func cmdClean(args []string) {
@@ -284,14 +245,8 @@ func cmdClean(args []string) {
 	}
 
 	for _, b := range local {
-		if !merged[b] {
-			continue
-		}
-		cmd := exec.Command("git", "branch", "-D", b)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			fmt.Fprintf(os.Stderr, "glit: git branch -D %s: %v\n", b, err)
+		if merged[b] {
+			run("git", "branch", "-D", b)
 		}
 	}
 }
