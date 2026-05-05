@@ -14,7 +14,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase\n")
 		os.Exit(2)
 	}
 
@@ -29,9 +29,11 @@ func main() {
 		cmdMerge(os.Args[2:])
 	case "clean":
 		cmdClean(os.Args[2:])
+	case "rebase":
+		cmdRebase(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "glit: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase\n")
 		os.Exit(2)
 	}
 }
@@ -208,6 +210,33 @@ func cmdMerge(args []string) {
 	runGit("push", "origin", "--delete", branch)
 	runGit("branch", "-D", branch)
 	runGit("pull", "--rebase")
+}
+
+func cmdRebase(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: glit rebase\n")
+		os.Exit(2)
+	}
+
+	def, err := defaultBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
+	}
+
+	runGit := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "glit: git %s: %v\n", strings.Join(args, " "), err)
+			os.Exit(1)
+		}
+	}
+
+	runGit("fetch", "origin", def)
+	runGit("rebase", "origin/"+def)
 }
 
 func cmdClean(args []string) {
