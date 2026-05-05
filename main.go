@@ -108,6 +108,14 @@ func cmdCreate(args []string) {
 		os.Exit(1)
 	}
 
+	push := exec.Command("git", "push", "-u", "origin", branch)
+	push.Stdout = os.Stdout
+	push.Stderr = os.Stderr
+	if err := push.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: git push: %v\n", err)
+		os.Exit(1)
+	}
+
 	title, body, err := commitTitleBody(branch)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
