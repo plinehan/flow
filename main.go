@@ -149,7 +149,7 @@ func cmdView(args []string) {
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("gh", "pr", "view", "--web", "--head", branch)
+	cmd := exec.Command("gh", "pr", "view", "--web", branch)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
