@@ -14,7 +14,7 @@ import (
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean\n")
 		os.Exit(2)
 	}
 
@@ -27,9 +27,11 @@ func main() {
 		cmdView(os.Args[2:])
 	case "merge":
 		cmdMerge(os.Args[2:])
+	case "clean":
+		cmdClean(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "glit: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean\n")
 		os.Exit(2)
 	}
 }
@@ -206,6 +208,63 @@ func cmdMerge(args []string) {
 	runGit("push", "origin", "--delete", branch)
 	runGit("branch", "-D", branch)
 	runGit("pull", "--rebase")
+}
+
+func cmdClean(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: glit clean\n")
+		os.Exit(2)
+	}
+
+	def, err := defaultBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
+	}
+
+	out, err := exec.Command("git", "branch", "--format=%(refname:short)").Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: git branch: %v\n", err)
+		os.Exit(1)
+	}
+	var local []string
+	for _, b := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		if b = strings.TrimSpace(b); b != "" && b != def {
+			local = append(local, b)
+		}
+	}
+	if len(local) == 0 {
+		return
+	}
+
+	out, err = exec.Command("gh", "pr", "list", "--state", "merged", "--json", "headRefName", "--limit", "1000").Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: gh pr list: %v\n", err)
+		os.Exit(1)
+	}
+	var prs []struct {
+		HeadRefName string `json:"headRefName"`
+	}
+	if err := json.Unmarshal(out, &prs); err != nil {
+		fmt.Fprintf(os.Stderr, "glit: parsing gh output: %v\n", err)
+		os.Exit(1)
+	}
+	merged := make(map[string]bool, len(prs))
+	for _, pr := range prs {
+		merged[pr.HeadRefName] = true
+	}
+
+	for _, b := range local {
+		if !merged[b] {
+			continue
+		}
+		cmd := exec.Command("git", "branch", "-D", b)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "glit: git branch -D %s: %v\n", b, err)
+		}
+	}
 }
 
 func currentBranch() (string, error) {
