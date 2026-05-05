@@ -177,14 +177,35 @@ func cmdMerge(args []string) {
 		os.Exit(1)
 	}
 
-	cmd := exec.Command("gh", "pr", "merge", branch, "--squash")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
+	def, err := defaultBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
+	}
+
+	merge := exec.Command("gh", "pr", "merge", branch, "--squash")
+	merge.Stdout = os.Stdout
+	merge.Stderr = os.Stderr
+	merge.Stdin = os.Stdin
+	if err := merge.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "glit: gh pr merge: %v\n", err)
 		os.Exit(1)
 	}
+
+	runGit := func(args ...string) {
+		cmd := exec.Command("git", args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			fmt.Fprintf(os.Stderr, "glit: git %s: %v\n", strings.Join(args, " "), err)
+			os.Exit(1)
+		}
+	}
+
+	runGit("checkout", def)
+	runGit("push", "origin", "--delete", branch)
+	runGit("branch", "-D", branch)
+	runGit("pull", "--rebase")
 }
 
 func currentBranch() (string, error) {
