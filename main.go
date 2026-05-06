@@ -29,7 +29,6 @@ func run(name string, args ...string) {
 
 // runOutput logs and executes a command, capturing and returning its stdout.
 func runOutput(name string, args ...string) ([]byte, error) {
-	fmt.Printf("%s> %s %s%s\n", grey, name, strings.Join(args, " "), reset)
 	return exec.Command(name, args...).Output()
 }
 
