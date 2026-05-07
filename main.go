@@ -27,10 +27,6 @@ func run(name string, args ...string) {
 	}
 }
 
-// runOutput logs and executes a command, capturing and returning its stdout.
-func runOutput(name string, args ...string) ([]byte, error) {
-	return exec.Command(name, args...).Output()
-}
 
 func main() {
 	if len(os.Args) < 2 {
@@ -217,7 +213,7 @@ func cmdClean(args []string) {
 		os.Exit(1)
 	}
 
-	out, err := runOutput("git", "branch", "--format=%(refname:short)")
+	out, err := exec.Command("git", "branch", "--format=%(refname:short)").Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "glit: git branch: %v\n", err)
 		os.Exit(1)
@@ -232,7 +228,7 @@ func cmdClean(args []string) {
 		return
 	}
 
-	out, err = runOutput("gh", "pr", "list", "--state", "merged", "--json", "headRefName", "--limit", "1000")
+	out, err = exec.Command("gh", "pr", "list", "--state", "merged", "--json", "headRefName", "--limit", "1000").Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "glit: gh pr list: %v\n", err)
 		os.Exit(1)
@@ -257,7 +253,7 @@ func cmdClean(args []string) {
 }
 
 func currentBranch() (string, error) {
-	out, err := runOutput("git", "rev-parse", "--abbrev-ref", "HEAD")
+	out, err := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD").Output()
 	if err != nil {
 		return "", fmt.Errorf("could not determine current branch: %v", err)
 	}
@@ -278,7 +274,7 @@ func assertNotDefaultBranch(branch string) error {
 
 // defaultBranch returns the repository's default branch name as reported by GitHub.
 func defaultBranch() (string, error) {
-	out, err := runOutput("gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name")
+	out, err := exec.Command("gh", "repo", "view", "--json", "defaultBranchRef", "--jq", ".defaultBranchRef.name").Output()
 	if err != nil {
 		return "", fmt.Errorf("gh repo view: %v", err)
 	}
@@ -290,7 +286,7 @@ func defaultBranch() (string, error) {
 
 // commitTitleBody returns the first line and remainder of the tip commit message on branch.
 func commitTitleBody(branch string) (title, body string, err error) {
-	out, err := runOutput("git", "log", "-1", "--format=%B", branch)
+	out, err := exec.Command("git", "log", "-1", "--format=%B", branch).Output()
 	if err != nil {
 		return "", "", fmt.Errorf("git log: %v", err)
 	}
@@ -304,7 +300,7 @@ func commitTitleBody(branch string) (title, body string, err error) {
 
 // prForBranch returns the PR number for the given branch, or 0 if none exists.
 func prForBranch(branch string) (int, error) {
-	out, err := runOutput("gh", "pr", "list", "--head", branch, "--json", "number")
+	out, err := exec.Command("gh", "pr", "list", "--head", branch, "--json", "number").Output()
 	if err != nil {
 		return 0, fmt.Errorf("gh pr list: %v", err)
 	}
@@ -336,14 +332,14 @@ func randomBranchSlug() (string, error) {
 }
 
 func githubUsername() (string, error) {
-	out, err := runOutput("git", "config", "--get", "github.user")
+	out, err := exec.Command("git", "config", "--get", "github.user").Output()
 	if err == nil {
 		if u := strings.TrimSpace(string(out)); u != "" {
 			return u, nil
 		}
 	}
 
-	out, err = runOutput("gh", "api", "user", "--jq", ".login")
+	out, err = exec.Command("gh", "api", "user", "--jq", ".login").Output()
 	if err != nil {
 		return "", fmt.Errorf("GitHub username: set `git config github.user <login>` or run `gh auth login`")
 	}
