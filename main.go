@@ -99,25 +99,15 @@ func cmdCreate(args []string) {
 	}
 	args = filtered
 
-	if len(args) > 1 {
-		fmt.Fprintf(os.Stderr, "usage: glit create [-v] [branch]\n")
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: glit create [-v]\n")
 		os.Exit(2)
 	}
 
-	var branch string
-	if len(args) == 1 {
-		branch = strings.TrimSpace(args[0])
-		if branch == "" {
-			fmt.Fprintf(os.Stderr, "glit: branch name must not be empty\n")
-			os.Exit(2)
-		}
-	} else {
-		var err error
-		branch, err = currentBranch()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "glit: %v\n", err)
-			os.Exit(1)
-		}
+	branch, err := currentBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		os.Exit(1)
 	}
 
 	if err := assertNotDefaultBranch(branch); err != nil {
