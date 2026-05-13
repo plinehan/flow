@@ -88,8 +88,19 @@ func cmdBranch(args []string) {
 }
 
 func cmdCreate(args []string) {
+	view := false
+	var filtered []string
+	for _, a := range args {
+		if a == "-v" {
+			view = true
+		} else {
+			filtered = append(filtered, a)
+		}
+	}
+	args = filtered
+
 	if len(args) > 1 {
-		fmt.Fprintf(os.Stderr, "usage: glit create [branch]\n")
+		fmt.Fprintf(os.Stderr, "usage: glit create [-v] [branch]\n")
 		os.Exit(2)
 	}
 
@@ -133,6 +144,10 @@ func cmdCreate(args []string) {
 	}
 
 	run("gh", "pr", "create", "--head", branch, "--title", title, "--body", body)
+
+	if view {
+		run("gh", "pr", "view", "--web", branch)
+	}
 }
 
 func cmdView(args []string) {
