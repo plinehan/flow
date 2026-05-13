@@ -178,9 +178,8 @@ func cmdMerge(args []string) {
 		os.Exit(1)
 	}
 
-	run("gh", "pr", "merge", branch, "--squash")
+	run("gh", "pr", "merge", branch, "--squash", "--auto")
 	run("git", "checkout", def)
-	run("git", "push", "origin", "--delete", branch)
 	run("git", "branch", "-D", branch)
 	run("git", "pull", "--rebase")
 }
