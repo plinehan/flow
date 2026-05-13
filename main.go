@@ -180,7 +180,6 @@ func cmdMerge(args []string) {
 
 	run("gh", "pr", "merge", branch, "--squash", "--auto")
 	run("git", "checkout", def)
-	run("git", "branch", "-D", branch)
 	run("git", "pull", "--rebase")
 }
 
