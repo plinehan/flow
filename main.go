@@ -22,7 +22,7 @@ func run(name string, args ...string) {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %s %s: %v\n", name, strings.Join(args, " "), err)
+		fmt.Fprintf(os.Stderr, "flow: %s %s: %v\n", name, strings.Join(args, " "), err)
 		os.Exit(1)
 	}
 }
@@ -30,7 +30,7 @@ func run(name string, args ...string) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintf(os.Stderr, "usage: glit <command> [args]\n")
+		fmt.Fprintf(os.Stderr, "usage: flow <command> [args]\n")
 		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase\n")
 		os.Exit(2)
 	}
@@ -49,7 +49,7 @@ func main() {
 	case "rebase":
 		cmdRebase(os.Args[2:])
 	default:
-		fmt.Fprintf(os.Stderr, "glit: unknown command %q\n", os.Args[1])
+		fmt.Fprintf(os.Stderr, "flow: unknown command %q\n", os.Args[1])
 		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase\n")
 		os.Exit(2)
 	}
@@ -57,13 +57,13 @@ func main() {
 
 func cmdBranch(args []string) {
 	if len(args) > 1 {
-		fmt.Fprintf(os.Stderr, "usage: glit branch [name]\n")
+		fmt.Fprintf(os.Stderr, "usage: flow branch [name]\n")
 		os.Exit(2)
 	}
 
 	user, err := githubUsername()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -71,14 +71,14 @@ func cmdBranch(args []string) {
 	if len(args) == 1 {
 		name := strings.TrimSpace(args[0])
 		if name == "" {
-			fmt.Fprintf(os.Stderr, "glit: branch name must not be empty\n")
+			fmt.Fprintf(os.Stderr, "flow: branch name must not be empty\n")
 			os.Exit(2)
 		}
 		branch = fmt.Sprintf("%s/%s", user, name)
 	} else {
 		slug, err := randomBranchSlug()
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+			fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 			os.Exit(1)
 		}
 		branch = fmt.Sprintf("%s/%s", user, slug)
@@ -100,28 +100,28 @@ func cmdCreate(args []string) {
 	args = filtered
 
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "usage: glit create [-v]\n")
+		fmt.Fprintf(os.Stderr, "usage: flow create [-v]\n")
 		os.Exit(2)
 	}
 
 	branch, err := currentBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := assertNotDefaultBranch(branch); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	existing, err := prForBranch(branch)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 	if existing != 0 {
-		fmt.Fprintf(os.Stderr, "glit: branch %q already has PR #%d\n", branch, existing)
+		fmt.Fprintf(os.Stderr, "flow: branch %q already has PR #%d\n", branch, existing)
 		os.Exit(1)
 	}
 
@@ -129,7 +129,7 @@ func cmdCreate(args []string) {
 
 	title, body, err := commitTitleBody(branch)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -142,18 +142,18 @@ func cmdCreate(args []string) {
 
 func cmdView(args []string) {
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "usage: glit view\n")
+		fmt.Fprintf(os.Stderr, "usage: flow view\n")
 		os.Exit(2)
 	}
 
 	branch, err := currentBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := assertNotDefaultBranch(branch); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -162,24 +162,24 @@ func cmdView(args []string) {
 
 func cmdMerge(args []string) {
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "usage: glit merge\n")
+		fmt.Fprintf(os.Stderr, "usage: flow merge\n")
 		os.Exit(2)
 	}
 
 	branch, err := currentBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	if err := assertNotDefaultBranch(branch); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	def, err := defaultBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -190,13 +190,13 @@ func cmdMerge(args []string) {
 
 func cmdRebase(args []string) {
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "usage: glit rebase\n")
+		fmt.Fprintf(os.Stderr, "usage: flow rebase\n")
 		os.Exit(2)
 	}
 
 	def, err := defaultBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -206,19 +206,19 @@ func cmdRebase(args []string) {
 
 func cmdClean(args []string) {
 	if len(args) > 0 {
-		fmt.Fprintf(os.Stderr, "usage: glit clean\n")
+		fmt.Fprintf(os.Stderr, "usage: flow clean\n")
 		os.Exit(2)
 	}
 
 	def, err := defaultBranch()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
 	}
 
 	out, err := exec.Command("git", "branch", "--format=%(refname:short)").Output()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: git branch: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: git branch: %v\n", err)
 		os.Exit(1)
 	}
 	var local []string
@@ -233,14 +233,14 @@ func cmdClean(args []string) {
 
 	out, err = exec.Command("gh", "pr", "list", "--state", "merged", "--json", "headRefName", "--limit", "1000").Output()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "glit: gh pr list: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: gh pr list: %v\n", err)
 		os.Exit(1)
 	}
 	var prs []struct {
 		HeadRefName string `json:"headRefName"`
 	}
 	if err := json.Unmarshal(out, &prs); err != nil {
-		fmt.Fprintf(os.Stderr, "glit: parsing gh output: %v\n", err)
+		fmt.Fprintf(os.Stderr, "flow: parsing gh output: %v\n", err)
 		os.Exit(1)
 	}
 	merged := make(map[string]bool, len(prs))

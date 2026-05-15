@@ -1,4 +1,4 @@
-module glit
+module flow
 
 go 1.22
 
