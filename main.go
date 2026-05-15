@@ -63,30 +63,41 @@ func cmdBranch(args []string) {
 		os.Exit(2)
 	}
 
-	user, err := githubUsername()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
-		os.Exit(1)
-	}
-
-	var branch string
 	if len(args) == 1 {
 		name := strings.TrimSpace(args[0])
 		if name == "" {
 			fmt.Fprintf(os.Stderr, "flow: branch name must not be empty\n")
 			os.Exit(2)
 		}
-		branch = fmt.Sprintf("%s/%s", user, name)
-	} else {
-		slug, err := randomBranchSlug()
+		user, err := githubUsername()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 			os.Exit(1)
 		}
-		branch = fmt.Sprintf("%s/%s", user, slug)
+		run("git", "checkout", "-b", fmt.Sprintf("%s/%s", user, name))
+		return
 	}
 
+	if _, err := newRandomBranch(); err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// newRandomBranch creates and checks out a new branch named "<user>/<random-slug>",
+// returning the new branch name.
+func newRandomBranch() (string, error) {
+	user, err := githubUsername()
+	if err != nil {
+		return "", err
+	}
+	slug, err := randomBranchSlug()
+	if err != nil {
+		return "", err
+	}
+	branch := fmt.Sprintf("%s/%s", user, slug)
 	run("git", "checkout", "-b", branch)
+	return branch, nil
 }
 
 func cmdCreate(args []string) {
@@ -112,9 +123,17 @@ func cmdCreate(args []string) {
 		os.Exit(1)
 	}
 
-	if err := assertNotDefaultBranch(branch); err != nil {
+	def, err := defaultBranch()
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
 		os.Exit(1)
+	}
+	if branch == def {
+		branch, err = newRandomBranch()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	existing, err := prForBranch(branch)
