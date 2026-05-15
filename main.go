@@ -216,6 +216,12 @@ func cmdClean(args []string) {
 		os.Exit(1)
 	}
 
+	cur, err := currentBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+		os.Exit(1)
+	}
+
 	out, err := exec.Command("git", "branch", "--format=%(refname:short)").Output()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "flow: git branch: %v\n", err)
@@ -249,9 +255,13 @@ func cmdClean(args []string) {
 	}
 
 	for _, b := range local {
-		if merged[b] {
-			run("git", "branch", "-D", b)
+		if !merged[b] {
+			continue
 		}
+		if b == cur {
+			run("git", "checkout", def)
+		}
+		run("git", "branch", "-D", b)
 	}
 }
 
