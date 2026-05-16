@@ -27,7 +27,6 @@ func run(name string, args ...string) {
 	}
 }
 
-
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: flow <command> [args]\n")
