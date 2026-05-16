@@ -28,18 +28,17 @@ export PATH="$PATH:$(go env GOBIN):$(go env GOPATH)/bin"
 Install [pre-commit](https://pre-commit.com/) and enable the hooks:
 
 ```sh
-brew install pre-commit  # or: pip install pre-commit
-pre-commit install
+uv add --dev pre-commit
+uv run pre-commit install
 ```
-
-This runs `gofmt`, `go vet`, and `go build` on every commit.
 
 ## Commands
 
 - `flow branch [name]` — create and check out a new branch (`<user>/<name>` or a random slug)
 - `flow create [-v]` — push the current branch and open a PR (`-v` opens it in the browser)
 - `flow view` — open the current branch's PR in the browser
-- `flow merge` — auto-squash-merge the current branch's PR, then return to the default branch
+- `flow merge` — auto-squash-merge the current branch's PR, then return to the default (e.g. `main`)
+  branch
 - `flow rebase` — rebase the current branch onto the latest default branch
 - `flow push` — force-push the current branch (refused on the default branch)
 - `flow clean` — delete local branches whose PRs have been merged
