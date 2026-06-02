@@ -30,7 +30,7 @@ func run(name string, args ...string) {
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: flow <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push, dirty\n")
 		os.Exit(2)
 	}
 
@@ -49,9 +49,11 @@ func main() {
 		cmdRebase(os.Args[2:])
 	case "push":
 		cmdPush(os.Args[2:])
+	case "dirty":
+		cmdDirty(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "flow: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push, dirty\n")
 		os.Exit(2)
 	}
 }
@@ -226,6 +228,16 @@ func cmdPush(args []string) {
 	}
 
 	run("git", "push", "--force")
+}
+
+func cmdDirty(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: flow dirty\n")
+		os.Exit(2)
+	}
+
+	run("git", "stash", "list")
+	run("git", "branch")
 }
 
 func cmdRebase(args []string) {
