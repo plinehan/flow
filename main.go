@@ -30,7 +30,7 @@ func run(name string, args ...string) {
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: flow <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push, dirty\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, merge, clean, rebase, push, dirty\n")
 		os.Exit(2)
 	}
 
@@ -41,6 +41,8 @@ func main() {
 		cmdCreate(os.Args[2:])
 	case "view":
 		cmdView(os.Args[2:])
+	case "update":
+		cmdUpdate(os.Args[2:])
 	case "merge":
 		cmdMerge(os.Args[2:])
 	case "clean":
@@ -53,7 +55,7 @@ func main() {
 		cmdDirty(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "flow: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, merge, clean, rebase, push, dirty\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, merge, clean, rebase, push, dirty\n")
 		os.Exit(2)
 	}
 }
@@ -180,6 +182,32 @@ func cmdView(args []string) {
 	}
 
 	run("gh", "pr", "view", "--web", branch)
+}
+
+func cmdUpdate(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: flow update\n")
+		os.Exit(2)
+	}
+
+	branch, err := currentBranch()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err := assertNotDefaultBranch(branch); err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+		os.Exit(1)
+	}
+
+	title, body, err := commitTitleBody(branch)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "flow: %v\n", err)
+		os.Exit(1)
+	}
+
+	run("gh", "pr", "edit", branch, "--title", title, "--body", body)
 }
 
 func cmdMerge(args []string) {
