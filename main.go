@@ -264,8 +264,8 @@ func cmdDirty(args []string) {
 		os.Exit(2)
 	}
 
-	run("git", "stash", "list")
-	run("git", "branch")
+	run("git", "--no-pager", "stash", "list")
+	run("git", "--no-pager", "branch")
 }
 
 func cmdRebase(args []string) {
