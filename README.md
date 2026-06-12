@@ -38,6 +38,8 @@ uv run pre-commit install
 - `flow create [-v]` — push the current branch and open a PR (`-v` opens it in the browser)
 - `flow view` — open the current branch's PR in the browser
 - `flow update` — update the current branch's PR title and description from the HEAD commit message
+- `flow amend` — amend all changes into the HEAD commit, rebase onto the latest default branch, then
+  force-push
 - `flow merge` — auto-squash-merge the current branch's PR, then return to the default (e.g. `main`)
   branch
 - `flow rebase` — rebase the current branch onto the latest default branch
