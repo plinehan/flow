@@ -45,4 +45,5 @@ uv run pre-commit install
 - `flow rebase` — rebase the current branch onto the latest default branch
 - `flow push` — force-push the current branch (refused on the default branch)
 - `flow clean` — delete local branches whose PRs have been merged
+- `flow prune` — prune remote-tracking branches that no longer exist on `origin`
 - `flow dirty` — show the stash list and all local branches
