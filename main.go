@@ -30,7 +30,7 @@ func run(name string, args ...string) {
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintf(os.Stderr, "usage: flow <command> [args]\n")
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, amend, merge, clean, rebase, push, dirty\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, amend, merge, clean, rebase, push, prune, dirty\n")
 		os.Exit(2)
 	}
 
@@ -45,6 +45,8 @@ func main() {
 		cmdUpdate(os.Args[2:])
 	case "amend":
 		cmdAmend(os.Args[2:])
+	case "prune":
+		cmdPrune(os.Args[2:])
 	case "merge":
 		cmdMerge(os.Args[2:])
 	case "clean":
@@ -57,7 +59,7 @@ func main() {
 		cmdDirty(os.Args[2:])
 	default:
 		fmt.Fprintf(os.Stderr, "flow: unknown command %q\n", os.Args[1])
-		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, amend, merge, clean, rebase, push, dirty\n")
+		fmt.Fprintf(os.Stderr, "commands: branch, create, view, update, amend, merge, clean, rebase, push, prune, dirty\n")
 		os.Exit(2)
 	}
 }
@@ -287,6 +289,15 @@ func cmdPush(args []string) {
 	}
 
 	run("git", "push", "--force")
+}
+
+func cmdPrune(args []string) {
+	if len(args) > 0 {
+		fmt.Fprintf(os.Stderr, "usage: flow prune\n")
+		os.Exit(2)
+	}
+
+	run("git", "remote", "prune", "origin")
 }
 
 func cmdDirty(args []string) {
