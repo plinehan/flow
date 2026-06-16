@@ -384,6 +384,9 @@ func cmdClean(args []string) {
 			run("git", "checkout", def)
 		}
 		run("git", "branch", "-D", b)
+		// Also drop the local origin/<branch> remote-tracking ref. This does
+		// not touch the remote.
+		run("git", "branch", "-D", "-r", "origin/"+b)
 	}
 }
 
